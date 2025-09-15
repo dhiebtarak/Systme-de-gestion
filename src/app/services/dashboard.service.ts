@@ -1,64 +1,61 @@
 import { Injectable } from '@angular/core';
-import { EmployeeService } from './employee.service';
 import { ClientService } from './client.service';
+import { Client, Order } from '../models/client.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  constructor(
-    private employeeService: EmployeeService,
-    private clientService: ClientService
-  ) {}
+  constructor(private clientService: ClientService) {}
 
-  getDashboardStats() {
-    const employees = this.employeeService.getEmployees();
+  getDashboardStats(): {
+    totalRevenue: number;
+    totalClients: number;
+    pendingOrders: number;
+    pendingAmount: number;
+    deliveredThisMonth: number;
+  } {
     const clients = this.clientService.getClients();
     
-    // Calcul du chiffre d'affaires total
-    const totalRevenue = clients.reduce((total, client) => {
-      return total + client.orders
-        .filter(order => order.paymentStatus === 'payée')
-        .reduce((sum, order) => sum + order.price, 0);
-    }, 0);
+    const totalRevenue = clients
+      .flatMap(client => client.orders || [])
+      .reduce((sum, order) => sum + order.price, 0);
 
-    // Calcul des commandes en attente
-    const pendingOrders = clients.reduce((total, client) => {
-      return total + client.orders.filter(order => order.paymentStatus !== 'payée').length;
-    }, 0);
+    const totalClients = clients.length;
 
-    // Calcul du montant en attente
-    const pendingAmount = clients.reduce((total, client) => {
-      return total + client.orders
-        .filter(order => order.paymentStatus !== 'payée')
-        .reduce((sum, order) => sum + order.price, 0);
-    }, 0);
+    const pendingOrders = clients
+      .flatMap(client => client.orders || [])
+      .filter(order => order.deliveryStatus === 'en attente')
+      .length;
 
-    // Calcul des salaires mensuels totaux
-    const now = new Date();
-    const totalSalaries = employees.reduce((total, employee) => {
-      return total + this.employeeService.calculateMonthlySalary(employee, now.getMonth(), now.getFullYear());
-    }, 0);
+    const pendingAmount = clients
+      .flatMap(client => {
+        const totalPaid = (client.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
+        const totalOrderPrice = (client.orders || []).reduce((sum, order) => sum + order.price, 0);
+        return totalPaid < totalOrderPrice ? totalOrderPrice - totalPaid : 0;
+      })
+      .reduce((sum, amount) => sum + amount, 0);
 
-    // Commandes livrées ce mois
-    const deliveredThisMonth = clients.reduce((total, client) => {
-      return total + client.orders.filter(order => {
+    const deliveredThisMonth = clients
+      .flatMap(client => client.orders || [])
+      .filter(order => {
         const orderDate = new Date(order.date);
-        return order.deliveryStatus === 'livrée' && 
-               orderDate.getMonth() === now.getMonth() && 
-               orderDate.getFullYear() === now.getFullYear();
-      }).length;
-    }, 0);
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        return (
+          order.deliveryStatus === 'livrée' &&
+          orderDate.getMonth() === currentMonth &&
+          orderDate.getFullYear() === currentYear
+        );
+      })
+      .length;
 
     return {
       totalRevenue,
-      totalClients: clients.length,
-      totalEmployees: employees.length,
+      totalClients,
       pendingOrders,
       pendingAmount,
-      totalSalaries,
-      deliveredThisMonth,
-      netProfit: totalRevenue - totalSalaries
+      deliveredThisMonth
     };
   }
 }

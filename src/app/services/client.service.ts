@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Client, Order } from '../models/client.model';
+import { Client, Order, Payment } from '../models/client.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,9 +18,8 @@ export class ClientService {
           date: '2025-01-10',
           type: 'Robes',
           price: 500,
-          paymentStatus: 'payée',
           deliveryStatus: 'livrée',
-          partialAmount: 0
+          selected: false  // Initialisé explicitement
         },
         {
           id: 2,
@@ -28,9 +27,17 @@ export class ClientService {
           date: '2025-01-15',
           type: 'Tissu',
           price: 200,
-          paymentStatus: 'non payée',
           deliveryStatus: 'en attente',
-          partialAmount: 0
+          selected: false  // Initialisé explicitement
+        }
+      ],
+      payments: [
+        {
+          id: 1,
+          clientId: 1,
+          date: '2025-01-10',
+          amount: 500,
+          selected: false  // Initialisé explicitement
         }
       ]
     },
@@ -45,11 +52,11 @@ export class ClientService {
           date: '2025-01-12',
           type: 'Robes',
           price: 500,
-          paymentStatus: 'en attente',
           deliveryStatus: 'en attente',
-          partialAmount: 0
+          selected: false  // Initialisé explicitement
         }
-      ]
+      ],
+      payments: []
     }
   ];
 
@@ -57,7 +64,11 @@ export class ClientService {
   clients$ = this.clientsSubject.asObservable();
 
   getClients(): Client[] {
-    return this.clients;
+    return this.clients.map(client => ({
+      ...client,
+      orders: client.orders || [],
+      payments: client.payments || []
+    }));
   }
 
   deleteClient(id: number): void {
@@ -69,25 +80,24 @@ export class ClientService {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
       client.orders = client.orders.filter(order => order.id !== orderId);
-      this.clientsSubject.next(this.clients);
+      this.clientsSubject.next(this.clients);  // Notifier les changements
     }
   }
 
-  addOrder(clientId: number, type: string, options?: { price?: number; paymentStatus?: string; deliveryStatus?: string }): void {
+  addOrder(clientId: number, type: string, options?: { price?: number; deliveryStatus?: string }): void {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
       const newOrder: Order = {
         id: Date.now(),
         clientId,
-        date: '2025-09-11', // Date actuelle
+        date: new Date().toISOString().split('T')[0],
         type,
         price: options?.price ?? (type === 'Robes' ? 500 : type === 'Tissu' ? 200 : 0),
-        paymentStatus: (options?.paymentStatus as 'en attente' | 'payée' | 'non payée' | 'payée partiellement') ?? 'en attente',
         deliveryStatus: (options?.deliveryStatus as 'en attente' | 'livrée' | 'non livrée') ?? 'en attente',
-        partialAmount: 0
+        selected: false  // Initialiser selected
       };
       client.orders.push(newOrder);
-      this.clientsSubject.next(this.clients);
+      this.clientsSubject.next(this.clients);  // Notifier les changements
     }
   }
 
@@ -96,7 +106,8 @@ export class ClientService {
       id: Date.now(),
       name,
       phone,
-      orders: []
+      orders: [],
+      payments: []
     };
     this.clients.push(newClient);
     this.clientsSubject.next(this.clients);
@@ -111,52 +122,46 @@ export class ClientService {
     }
   }
 
-  updateOrderStatus(clientId: number, orderId: number, field: 'paymentStatus' | 'deliveryStatus', status: string): void {
+  updateOrderStatus(clientId: number, orderId: number, field: 'deliveryStatus', status: string): void {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
       const order = client.orders.find(o => o.id === orderId);
       if (order) {
-        (order as any)[field] = status;
-        this.clientsSubject.next(this.clients);
+        order[field] = status as 'en attente' | 'livrée' | 'non livrée';
+        this.clientsSubject.next(this.clients);  // Notifier les changements
       }
     }
   }
 
-  updateOrderPartialPayment(clientId: number, orderId: number, partialAmount: number): void {
+  addPayment(clientId: number, date: string, amount: number): void {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
-      const order = client.orders.find(o => o.id === orderId);
-      if (order) {
-        order.partialAmount = partialAmount;
-        this.clientsSubject.next(this.clients);
-      }
+      client.payments = client.payments || [];
+      const id = client.payments.length > 0 ? Math.max(...client.payments.map(p => p.id)) + 1 : 1;
+      const newPayment: Payment = {
+        id,
+        clientId,
+        date,
+        amount,
+        selected: false  // Initialiser selected
+      };
+      client.payments.push(newPayment);
+      this.clientsSubject.next(this.clients);  // Notifier les changements
     }
   }
 
-  markOrdersAsPaid(clientId: number, orderIds: number[]): void {
+  deletePayment(clientId: number, paymentId: number): void {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
-      client.orders.forEach(order => {
-        if (orderIds.includes(order.id)) {
-          order.paymentStatus = 'payée';
-        }
-      });
-      this.clientsSubject.next(this.clients);
+      client.payments = client.payments.filter(p => p.id !== paymentId);
+      this.clientsSubject.next(this.clients);  // Notifier les changements
     }
   }
 
-  calculateTotals(orders: Order[]): { total: number; paid: number; remaining: number } {
+  calculateTotals(orders: Order[], payments: Payment[]): { total: number; paid: number; remaining: number } {
     const total = orders.reduce((sum, order) => sum + order.price, 0);
-    const paid = orders.reduce((sum, order) => {
-      if (order.paymentStatus === 'payée') {
-        return sum + order.price;
-      } else if (order.paymentStatus === 'payée partiellement') {
-        return sum + (order.partialAmount || 0);
-      }
-      return sum;
-    }, 0);
-    const remaining = total - paid;
-    
+    const paid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const remaining = Math.max(0, total - paid);  // Plafonner à 0 pour éviter les négatifs
     return { total, paid, remaining };
   }
 }

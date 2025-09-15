@@ -100,6 +100,11 @@ interface MonthlyData {
             </div>
           </div>
         </div>
+
+        <div class="action-buttons">
+          <button class="delete-btn" (click)="deleteSelectedHours()" *ngIf="hasSelectedHours()">Supprimer</button>
+          <button class="print-btn" (click)="printSummary()">Imprimer</button>
+        </div>
       </div>
     </div>
   `,
@@ -342,6 +347,49 @@ interface MonthlyData {
       color: #c2185b;
       font-weight: 600;
     }
+
+    .action-buttons {
+      padding: 15px 20px;
+      background: #fce4ec;
+      border-top: 1px solid #f8bbd9;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .delete-btn {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .delete-btn:hover {
+      background: linear-gradient(135deg, #d32f2f, #b71c1c);
+      transform: translateY(-2px);
+    }
+
+    .print-btn {
+      background: linear-gradient(135deg, #2196f3, #1976d2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .print-btn:hover {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
+      transform: translateY(-2px);
+    }
   `]
 })
 export class EmployeeDetailsComponent implements OnInit {
@@ -482,5 +530,52 @@ export class EmployeeDetailsComponent implements OnInit {
 
   getCurrentMonthSalary(): number {
     return this.getCurrentMonthHours() * (this.employee?.hourlyRate || 0);
+  }
+
+  printSummary(): void {
+    const printContent = `
+      <h2>Historique des Heures - ${this.employee?.name}</h2>
+      ${this.getMonthlyData().map(monthData => `
+        <h3>${monthData.monthName}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Heures</th>
+              <th>Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${monthData.workHours.map(wh => `
+              <tr>
+                <td>${this.formatDate(wh.date)}</td>
+                <td>${wh.hours}h</td>
+                <td>${wh.hours * (this.employee?.hourlyRate || 0)} DT</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td><strong>${monthData.totalHours}h</strong></td>
+              <td><strong>${monthData.totalAmount} DT</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      `).join('')}
+      <p><strong>Total Heures ce Mois: ${this.getCurrentMonthHours()}h</strong></p>
+      <p><strong>Salaire Mensuel: ${this.getCurrentMonthSalary()} DT</strong></p>
+    `;
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head><title>Historique des Heures</title></head>
+          <body>${printContent}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
   }
 }

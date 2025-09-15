@@ -19,7 +19,8 @@ import { ClientDashboardComponent } from './app/components/client-dashboard/clie
     <div class="app-container" *ngIf="isAuthenticated">
       <header class="app-header">
         <div class="header-content">
-          <h1>🌹 Système de Gestion de robes </h1>
+          <img src="src/assets/logo.jpg" alt="Logo de la marque" class="logo">
+          <h1>🌹 Système de Gestion d'atelier de robes </h1>
           <button class="logout-btn" (click)="logout()">
             🚪 Déconnexion
           </button>
@@ -70,6 +71,12 @@ import { ClientDashboardComponent } from './app/components/client-dashboard/clie
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
+    }
+
+    .logo {
+      height: 60px; /* Ajustez la hauteur selon vos besoins */
+      width: auto;
+      margin-right: 20px;
     }
 
     .header-content h1 {
@@ -143,6 +150,11 @@ import { ClientDashboardComponent } from './app/components/client-dashboard/clie
       
       .header-content h1 {
         font-size: 2rem;
+      }
+      
+      .logo {
+        height: 50px; /* Réduire la taille sur mobile */
+        margin-right: 0;
       }
       
       .nav-tabs {

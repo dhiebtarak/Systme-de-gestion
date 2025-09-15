@@ -22,27 +22,11 @@ import { DashboardService } from '../../services/dashboard.service';
           </div>
         </div>
         
-        <div class="stat-card profit">
-          <div class="stat-icon">📈</div>
-          <div class="stat-content">
-            <h3>{{ stats.netProfit }} DT</h3>
-            <p>Bénéfice Net</p>
-          </div>
-        </div>
-        
         <div class="stat-card clients">
           <div class="stat-icon">👰</div>
           <div class="stat-content">
             <h3>{{ stats.totalClients }}</h3>
             <p>Clients Total</p>
-          </div>
-        </div>
-        
-        <div class="stat-card employees">
-          <div class="stat-icon">👥</div>
-          <div class="stat-content">
-            <h3>{{ stats.totalEmployees }}</h3>
-            <p>Employés</p>
           </div>
         </div>
         
@@ -62,14 +46,6 @@ import { DashboardService } from '../../services/dashboard.service';
           </div>
         </div>
         
-        <div class="stat-card salaries">
-          <div class="stat-icon">💼</div>
-          <div class="stat-content">
-            <h3>{{ stats.totalSalaries }} DT</h3>
-            <p>Salaires Mensuels</p>
-          </div>
-        </div>
-        
         <div class="stat-card delivered">
           <div class="stat-icon">📦</div>
           <div class="stat-content">
@@ -82,11 +58,6 @@ import { DashboardService } from '../../services/dashboard.service';
       <div class="quick-actions">
         <h3>🚀 Actions Rapides</h3>
         <div class="actions-grid">
-          <div class="action-card">
-            <div class="action-icon">👥</div>
-            <h4>Gestion Employés</h4>
-            <p>Gérer les heures et salaires</p>
-          </div>
           <div class="action-card">
             <div class="action-icon">👰</div>
             <h4>Gestion Clients</h4>
@@ -145,12 +116,9 @@ import { DashboardService } from '../../services/dashboard.service';
     }
 
     .stat-card.revenue { border-left-color: #4caf50; }
-    .stat-card.profit { border-left-color: #2196f3; }
     .stat-card.clients { border-left-color: #e91e63; }
-    .stat-card.employees { border-left-color: #9c27b0; }
     .stat-card.pending { border-left-color: #ff9800; }
     .stat-card.pending-amount { border-left-color: #f44336; }
-    .stat-card.salaries { border-left-color: #607d8b; }
     .stat-card.delivered { border-left-color: #8bc34a; }
 
     .stat-icon {
@@ -236,15 +204,18 @@ import { DashboardService } from '../../services/dashboard.service';
   `]
 })
 export class DashboardComponent implements OnInit {
-  stats = {
+  stats: {
+    totalRevenue: number;
+    totalClients: number;
+    pendingOrders: number;
+    pendingAmount: number;
+    deliveredThisMonth: number;
+  } = {
     totalRevenue: 0,
     totalClients: 0,
-    totalEmployees: 0,
     pendingOrders: 0,
     pendingAmount: 0,
-    totalSalaries: 0,
-    deliveredThisMonth: 0,
-    netProfit: 0
+    deliveredThisMonth: 0
   };
 
   constructor(private dashboardService: DashboardService) {}

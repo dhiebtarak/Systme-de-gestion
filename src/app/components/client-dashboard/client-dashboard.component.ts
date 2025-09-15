@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClientService } from '../../services/client.service';
-import { Client } from '../../models/client.model';
+import { Client, Order, Payment } from '../../models/client.model';
 import { ClientDetailsComponent } from '../client-details/client-details.component';
 
 @Component({
@@ -467,14 +467,9 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   calculateTotalDue(client: Client): number {
-    return client.orders
-      .filter(order => order.paymentStatus !== 'payée')
-      .reduce((total, order) => {
-        if (order.paymentStatus === 'payée partiellement') {
-          return total + (order.price - (order.partialAmount || 0));
-        }
-        return total + order.price;
-      }, 0);
+    const totalOrders = client.orders.reduce((sum, order) => sum + order.price, 0);
+    const totalPaid = client.payments.reduce((sum, payment) => sum + payment.amount, 0);
+    return totalOrders - totalPaid;
   }
 
   openClientDetails(client: Client): void {
