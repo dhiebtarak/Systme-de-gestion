@@ -7,95 +7,363 @@
 button {
   font-family: inherit;
 }
+
 body {
+  font-family: 'Inter', 'SF Pro Display', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #2c1810;
+  background: linear-gradient(135deg, #f4f1ec 0%, #e6d7c8 30%, #8b4d3b 70%, #6b2c1a 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
 input, select, textarea {
   font-family: inherit;
 }
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-  line-height: 1.6;
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  background: #fce4ec;
-}
-  color: #333;
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  background: #f8bbd9;
-}
-  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #e91e63 100%);
-  min-height: 100vh;
-::-webkit-scrollbar-thumb:hover {
-  background: #e91e63;
-}
-}
-/* Animation classes */
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-/* Rose theme utilities */
-.text-primary { color: #e91e63; }
-.text-secondary { color: #ad1457; }
-.text-accent { color: #880e4f; }
-.bg-primary { background: #e91e63; }
-.bg-secondary { background: #ad1457; }
-.bg-light { background: #fce4ec; }
-.bg-lighter { background: #f8bbd9; }
 
-/* Button styles */
+/* Scrollbar styling moderne */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4f1ec;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #8b4d3b, #a0563f);
+  border-radius: 10px;
+  border: 2px solid #f4f1ec;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #6b2c1a, #8b4d3b);
+  box-shadow: 0 0 10px rgba(139, 77, 59, 0.4);
+}
+
+/* Animation classes améliorées */
+.fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+/* Nouvelle animation slide */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Rose theme utilities avec palette rose foncé/beige */
+.text-primary { 
+  color: #8b4d3b; 
+  font-weight: 600;
+}
+
+.text-secondary { 
+  color: #6b2c1a; 
+  font-weight: 500;
+}
+
+.text-accent { 
+  color: #a0563f; 
+}
+
+.bg-primary { 
+  background: linear-gradient(135deg, #8b4d3b, #6b2c1a);
+  color: #f4f1ec;
+}
+
+.bg-secondary { 
+  background: #a0563f;
+  color: #f4f1ec;
+}
+
+.bg-light { 
+  background: #f4f1ec;
+  color: #2c1810;
+}
+
+.bg-lighter { 
+  background: #e6d7c8;
+  color: #2c1810;
+}
+
+/* Effet glassmorphisme */
+.bg-glass {
+  background: rgba(244, 241, 236, 0.25);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(139, 77, 59, 0.15);
+}
+
+/* Button styles modernisés */
 .btn-primary {
-  background: linear-gradient(135deg, #e91e63, #ad1457);
-  color: white;
+  background: linear-gradient(135deg, #8b4d3b, #6b2c1a);
+  color: #f4f1ec;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(139, 77, 59, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #a0563f, #8b4d3b);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(139, 77, 59, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* Bouton secondaire */
+.btn-secondary {
+  background: #e6d7c8;
+  color: #2c1810;
+  border: 2px solid #8b4d3b;
+  padding: 12px 24px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, #ad1457, #880e4f);
+.btn-secondary:hover {
+  background: #8b4d3b;
+  color: #f4f1ec;
   transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(139, 77, 59, 0.25);
 }
 
-/* Responsive design */
+/* Cards élégantes */
+.card {
+  background: rgba(244, 241, 236, 0.9);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 25px rgba(139, 77, 59, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(139, 77, 59, 0.25);
+}
+
+/* Navigation moderne */
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  background: rgba(244, 241, 236, 0.3);
+  backdrop-filter: blur(20px);
+  border-radius: 50px;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(139, 77, 59, 0.1);
+}
+
+.nav-tab {
+  padding: 12px 24px;
+  border-radius: 50px;
+  background: transparent;
+  color: #6b2c1a;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, #8b4d3b, #6b2c1a);
+  color: #f4f1ec;
+  box-shadow: 0 4px 15px rgba(139, 77, 59, 0.3);
+}
+
+.nav-tab:hover:not(.active) {
+  background: #e6d7c8;
+  color: #2c1810;
+}
+
+/* Formulaires stylisés */
+input, select, textarea {
+  background: rgba(244, 241, 236, 0.8);
+  border: 2px solid #e6d7c8;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #2c1810;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #8b4d3b;
+  box-shadow: 0 0 20px rgba(139, 77, 59, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Modal améliorée */
+.modal-content {
+  background: rgba(244, 241, 236, 0.95);
+  backdrop-filter: blur(25px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(139, 77, 59, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Grilles */
+.stats-grid, .actions-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #2c1810;
+  min-width: 120px;
+}
+
+/* Responsive design amélioré */
+@media (max-width: 1024px) {
+  .btn-primary, .btn-secondary {
+    padding: 12px 20px;
+  }
+}
+
 @media (max-width: 768px) {
+  body {
+    padding: 0 10px;
+  }
+  
   .nav-tabs {
     flex-direction: column;
     align-items: center;
+    border-radius: 16px;
+    padding: 16px;
   }
   
   .nav-tab {
-    width: 200px;
+    width: min(250px, 90vw);
+    text-align: center;
   }
   
   .modal-content {
     width: 95% !important;
-    margin: 10px;
+    margin: 20px auto;
+    border-radius: 16px;
   }
   
   .form-group {
     flex-direction: column;
     align-items: flex-start !important;
+    gap: 8px;
   }
   
   .form-group label {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+    min-width: unset;
   }
   
-  .stats-grid {
+  .stats-grid, .actions-grid {
     grid-template-columns: 1fr !important;
+    gap: 16px;
   }
   
-  .actions-grid {
-    grid-template-columns: 1fr !important;
+  .card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    justify-content: center;
   }
 }
+
+@media (max-width: 480px) {
+  .btn-primary, .btn-secondary {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+}
+
+/* Effets spéciaux */
+.hover-lift {
+  transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+.glow-effect {
+  box-shadow: 0 0 20px rgba(139, 77, 59, 0.3);
+}
+
+/* Animations décalées */
+.stagger > * {
+  animation: fadeIn 0.6s ease forwards;
+  opacity: 0;
+}
+
+.stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger > *:nth-child(5) { animation-delay: 0.5s; }

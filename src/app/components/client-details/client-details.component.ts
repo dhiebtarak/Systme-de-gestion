@@ -32,19 +32,6 @@ import { Subscription } from 'rxjs';
           </div>
         </div>
 
-        <div class="payment-section">
-          <h4>📝 Enregistrer un Paiement</h4>
-          <div class="form-group">
-            <label>Date Paiement:</label>
-            <input type="date" [(ngModel)]="newPayment.date" class="form-input">
-          </div>
-          <div class="form-group">
-            <label>Montant Payé (DT):</label>
-            <input type="number" step="0.01" [(ngModel)]="newPayment.amount" placeholder="Ex: 100" class="form-input">
-          </div>
-          <button class="add-payment-btn" (click)="addPayment()">💸 Ajouter Paiement</button>
-        </div>
-
         <div class="payment-history">
           <h4>📋 Historique des Paiements</h4>
           <div class="action-buttons">
@@ -77,6 +64,19 @@ import { Subscription } from 'rxjs';
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div class="payment-section">
+          <h4>📝 Enregistrer un Paiement</h4>
+          <div class="form-group">
+            <label>Date Paiement:</label>
+            <input type="date" [(ngModel)]="newPayment.date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Montant Payé (DT):</label>
+            <input type="number" step="0.01" [(ngModel)]="newPayment.amount" placeholder="Ex: 100" class="form-input">
+          </div>
+          <button class="add-payment-btn" (click)="addPayment()">💸 Ajouter Paiement</button>
         </div>
 
         <div class="add-order-section">
@@ -562,7 +562,9 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
   newPayment: Partial<Payment> = { date: new Date().toISOString().split('T')[0], amount: 0 };
   private clientSubscription!: Subscription;
 
-  constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {}
+  constructor(private clientService: ClientService, private cdr: ChangeDetectorRef) {
+    console.log('addPayment method exists:', typeof this.addPayment === 'function');
+  }
 
   ngOnInit(): void {
     this.initializeSelections();
@@ -570,14 +572,21 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     this.clientSubscription = this.clientService.clients$.subscribe(clients => {
       const updatedClient = clients.find(c => c.id === this.client.id);
       if (updatedClient) {
-        this.client = { 
-          ...updatedClient, 
-          orders: [...(updatedClient.orders || [])], 
-          payments: [...(updatedClient.payments || [])] 
+        this.client = {
+          ...updatedClient,
+          orders: (updatedClient.orders || []).map(order => ({
+            ...order,
+            selected: this.client.orders.find(o => o.id === order.id)?.selected ?? false
+          })),
+          payments: (updatedClient.payments || []).map(payment => ({
+            ...payment,
+            selected: this.client.payments.find(p => p.id === payment.id)?.selected ?? false
+          }))
         };
-        console.log(`Updated client orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`); // Debug log
+        console.log(`Updated client orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`);
         this.initializeSelections();
         this.updateTotals();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -588,13 +597,13 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  trackByOrderId: TrackByFunction<Order> = (index: number, order: Order): number => order.id;
-  trackByPaymentId: TrackByFunction<Payment> = (index: number, payment: Payment): number => payment.id;
+  public trackByOrderId: TrackByFunction<Order> = (index: number, order: Order): number => order.id;
+  public trackByPaymentId: TrackByFunction<Payment> = (index: number, payment: Payment): number => payment.id;
 
   private initializeSelections(): void {
     this.client.orders = (this.client.orders || []).map(order => ({
       ...order,
-      type: order.type || 'Commande sans nom', // Fallback for empty type
+      type: order.type || 'Commande sans nom',
       selected: order.selected ?? false
     }));
     this.client.payments = (this.client.payments || []).map(payment => ({
@@ -602,28 +611,28 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
       selected: payment.selected ?? false
     }));
     this.checkAllSelected();
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
-  onClose(): void {
+  public onClose(): void {
     this.close.emit();
   }
 
-  addOrder(type: string): void {
-    console.log(`Adding order of type: ${type} for client ID: ${this.client.id}`); // Debug log
-    this.clientService.addOrder(this.client.id, type);
+  public async addOrder(type: string): Promise<void> {
+    console.log(`Adding order of type: ${type} for client ID: ${this.client.id}`);
+    await this.clientService.addOrder(this.client.id, type);
     this.orderAdded.emit();
     this.initializeSelections();
     this.updateTotals();
   }
 
-  addCustomOrder(): void {
+  public async addCustomOrder(): Promise<void> {
     if (!this.customOrder.type.trim() || this.customOrder.price <= 0) {
       alert('Veuillez remplir le type et un prix valide.');
       return;
     }
-    console.log(`Adding custom order: ${JSON.stringify(this.customOrder)}`); // Debug log
-    this.clientService.addOrder(this.client.id, this.customOrder.type.trim(), {
+    console.log(`Adding custom order: ${JSON.stringify(this.customOrder)}`);
+    await this.clientService.addOrder(this.client.id, this.customOrder.type.trim(), {
       price: this.customOrder.price,
       deliveryStatus: this.customOrder.deliveryStatus
     });
@@ -633,52 +642,53 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     this.updateTotals();
   }
 
-  closeCustomOrderForm(): void {
+  public closeCustomOrderForm(): void {
     this.showCustomOrderForm = false;
     this.customOrder = {
       type: '',
       price: 0,
       deliveryStatus: 'en attente'
     };
+    this.cdr.markForCheck();
   }
 
-  updateOrderStatus(order: Order): void {
-    console.log(`Updating order status: ID ${order.id}, Type ${order.type}, Status ${order.deliveryStatus}`); // Debug log
-    this.clientService.updateOrderStatus(this.client.id, order.id, 'deliveryStatus', order.deliveryStatus);
+  public async updateOrderStatus(order: Order): Promise<void> {
+    console.log(`Updating order status: ID ${order.id}, Type ${order.type}, Status ${order.deliveryStatus}`);
+    await this.clientService.updateOrderStatus(this.client.id, order.id, 'deliveryStatus', order.deliveryStatus);
     this.updateTotals();
   }
 
-  updateTotals(): void {
+  public updateTotals(): void {
     this.totals = this.clientService.calculateTotals(this.client.orders || [], this.client.payments || []);
     this.checkAllSelected();
-    console.log(`Updated totals: ${JSON.stringify(this.totals)}`); // Debug log
-    console.log(`Current orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`); // Debug log
-    this.cdr.detectChanges();
+    console.log(`Updated totals: ${JSON.stringify(this.totals)}`);
+    console.log(`Current orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`);
+    this.cdr.markForCheck();
   }
 
-  addPayment(): void {
+  public async addPayment(): Promise<void> {
     if (!this.newPayment.date || this.newPayment.amount === undefined || this.newPayment.amount <= 0) {
       alert('Veuillez entrer une date valide et un montant positif.');
       return;
     }
-    console.log(`Adding payment: Date ${this.newPayment.date}, Amount ${this.newPayment.amount}`); // Debug log
-    this.clientService.addPayment(this.client.id, this.newPayment.date, this.newPayment.amount);
+    console.log(`Adding payment: Date ${this.newPayment.date}, Amount ${this.newPayment.amount}`);
+    await this.clientService.addPayment(this.client.id, this.newPayment.date, this.newPayment.amount);
     this.newPayment = { date: new Date().toISOString().split('T')[0], amount: 0 };
     this.orderAdded.emit();
     this.initializeSelections();
     this.updateTotals();
   }
 
-  deleteSelectedItems(type: 'orders' | 'payments'): void {
+  public async deleteSelectedItems(type: 'orders' | 'payments'): Promise<void> {
     if (type === 'orders') {
       const selectedOrderIds = this.client.orders.filter(order => order.selected).map(order => order.id);
       if (selectedOrderIds.length === 0) {
         alert('Veuillez sélectionner au moins une commande à supprimer.');
         return;
       }
-      console.log(`Deleting orders: ${selectedOrderIds}`); // Debug log
+      console.log(`Deleting orders: ${selectedOrderIds}`);
       if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedOrderIds.length} commande(s) ?`)) {
-        selectedOrderIds.forEach(id => this.clientService.deleteOrder(this.client.id, id));
+        await Promise.all(selectedOrderIds.map(id => this.clientService.deleteOrder(this.client.id, id)));
         this.orderAdded.emit();
         this.initializeSelections();
         this.updateTotals();
@@ -689,9 +699,9 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
         alert('Veuillez sélectionner au moins un paiement à supprimer.');
         return;
       }
-      console.log(`Deleting payments: ${selectedPaymentIds}`); // Debug log
+      console.log(`Deleting payments: ${selectedPaymentIds}`);
       if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedPaymentIds.length} paiement(s) ?`)) {
-        selectedPaymentIds.forEach(id => this.clientService.deletePayment(this.client.id, id));
+        await Promise.all(selectedPaymentIds.map(id => this.clientService.deletePayment(this.client.id, id)));
         this.orderAdded.emit();
         this.initializeSelections();
         this.updateTotals();
@@ -699,53 +709,54 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleSelectAllOrders(event: Event): void {
+  public toggleSelectAllOrders(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.client.orders = this.client.orders.map(order => ({ ...order, selected: checked }));
     this.allOrdersSelected = checked;
-    console.log(`Toggle all orders: ${checked}, Orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`); // Debug log
+    console.log(`Toggle all orders: ${checked}, Orders: ${JSON.stringify(this.client.orders.map(o => ({ id: o.id, type: o.type })))}`);
     this.updateTotals();
   }
 
-  toggleSelectAllPayments(event: Event): void {
+  public toggleSelectAllPayments(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.client.payments = this.client.payments.map(payment => ({ ...payment, selected: checked }));
     this.allPaymentsSelected = checked;
-    console.log(`Toggle all payments: ${checked}`); // Debug log
+    console.log(`Toggle all payments: ${checked}`);
     this.updateTotals();
   }
 
-  updateSelectionsAndTotals(): void {
+  public updateSelectionsAndTotals(): void {
     this.checkAllSelected();
     this.updateTotals();
   }
 
-  checkAllSelected(): void {
+  public checkAllSelected(): void {
     this.allOrdersSelected = this.client.orders.length > 0 && this.client.orders.every(order => order.selected === true);
     this.allPaymentsSelected = this.client.payments.length > 0 && this.client.payments.every(payment => payment.selected === true);
+    this.cdr.markForCheck();
   }
 
-  hasSelectedOrders(): boolean {
-    const hasSelected = this.client.orders.some(order => order.selected && order.deliveryStatus === 'livrée');
-    console.log(`Has selected orders: ${hasSelected}`); // Debug log
+  public hasSelectedOrders(): boolean {
+    const hasSelected = this.client.orders.some(order => order.selected);
+    console.log(`Has selected orders: ${hasSelected}`);
     return hasSelected;
   }
 
-  hasSelectedPayments(): boolean {
+  public hasSelectedPayments(): boolean {
     const hasSelected = this.client.payments.some(payment => payment.selected);
-    console.log(`Has selected payments: ${hasSelected}`); // Debug log
+    console.log(`Has selected payments: ${hasSelected}`);
     return hasSelected;
   }
 
-  printSelectedOrders(): void {
-    const selectedOrders = this.client.orders.filter(order => order.selected && order.deliveryStatus === 'livrée');
+  public async printSelectedOrders(): Promise<void> {
+    const selectedOrders = this.client.orders.filter(order => order.selected);
     if (selectedOrders.length === 0) {
-      alert('Veuillez sélectionner au moins une commande livrée à imprimer.');
+      alert('Veuillez sélectionner au moins une commande à imprimer.');
       return;
     }
-    console.log('Selected orders for printing:', selectedOrders.map(o => ({ id: o.id, type: o.type }))); // Debug log
+    console.log('Selected orders for printing:', selectedOrders.map(o => ({ id: o.id, type: o.type })));
     try {
-      this.generateInvoice(selectedOrders);
+      await this.generateInvoice(selectedOrders);
       alert('Factures imprimées avec succès !');
       this.initializeSelections();
       this.updateTotals();
@@ -755,25 +766,25 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  printSelectedPayments(): void {
+  public async printSelectedPayments(): Promise<void> {
     const selectedPayments = this.client.payments.filter(payment => payment.selected);
     if (selectedPayments.length === 0) {
       alert('Veuillez sélectionner au moins un paiement à imprimer.');
       return;
     }
-    console.log('Selected payments for printing:', selectedPayments); // Debug log
+    console.log('Selected payments for printing:', selectedPayments);
     try {
-      this.generatePaymentReceipt(selectedPayments);
+      await this.generatePaymentReceipt(selectedPayments);
       alert('Reçus de paiement imprimés avec succès !');
       this.initializeSelections();
       this.updateTotals();
     } catch (error) {
-      alert('Erreur lors de l\'impression des reçus. Vérifiez les paramètres de blocage des pop-ups.');
+      alert('Erreur lors de lнос impression des reçus. Vérifiez les paramètres de blocage des pop-ups.');
       console.error('Print error:', error);
     }
   }
 
-  private generateInvoice(orders: Order[]): void {
+  private async generateInvoice(orders: Order[]): Promise<void> {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez les paramètres de blocage des pop-ups.');
@@ -782,10 +793,11 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     printWindow.document.write(invoiceContent);
     printWindow.document.close();
     printWindow.focus();
+    await new Promise(resolve => setTimeout(resolve, 100));
     printWindow.print();
   }
 
-  private generatePaymentReceipt(payments: Payment[]): void {
+  private async generatePaymentReceipt(payments: Payment[]): Promise<void> {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez les paramètres de blocage des pop-ups.');
@@ -845,6 +857,7 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     printWindow.document.write(receiptContent);
     printWindow.document.close();
     printWindow.focus();
+    await new Promise(resolve => setTimeout(resolve, 100));
     printWindow.print();
   }
 
@@ -907,7 +920,7 @@ export class ClientDetailsComponent implements OnInit, OnDestroy {
     `;
   }
 
-  formatDate(dateString: string): string {
+  public formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR');
   }
