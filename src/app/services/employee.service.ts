@@ -1,64 +1,68 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Employee, WorkHour } from '../models/employee.model';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmployeeService {
-  private employees: Employee[] = [];
-  private nextWorkHourId: number = 1;
+  private apiUrl = 'http://localhost:5001/api/V1/employees'; // Example API URL
 
-  getEmployees(): Employee[] {
-    return this.employees;
+  constructor(private http: HttpClient) {}
+
+  getEmployees(): Observable<Employee[]> {
+    return this.http
+      .get<{ status: number; message: string; data: Employee[] }>(`${this.apiUrl}`)
+      .pipe(
+        map(response => response.data)
+      );
   }
 
-  addEmployee(name: string, phone: string, hourlyRate: number): void {
-    const id = this.employees.length + 1;
-    this.employees.push({ id, name, phone, hourlyRate, workHours: [] });
+  getEmployeeById(id: number): Observable<Employee> {
+    return this.http.get<Employee>(`${this.apiUrl}/${id}`);
   }
 
-  updateEmployee(id: number, name: string, phone: string, hourlyRate: number): void {
-    const employee = this.employees.find(e => e.id === id);
-    if (employee) {
-      employee.name = name;
-      employee.phone = phone;
-      employee.hourlyRate = hourlyRate;
-    }
+  createEmployee(phone: string, name: string, hourlyRate: number): Observable<Employee> {
+    return this.http.post<Employee>(`${this.apiUrl}`, { phone, name, hour_price: hourlyRate });
   }
 
-  deleteEmployee(id: number): void {
-    this.employees = this.employees.filter(e => e.id !== id);
+  updateEmployee(id: number, phone: string, name: string, hourlyRate: number): Observable<Employee> {
+    return this.http.put<Employee>(`${this.apiUrl}/${id}`, { phone, name, hour_price : hourlyRate });
   }
 
-  getWorkHours(employeeId: number): WorkHour[] {
-    const employee = this.employees.find(e => e.id === employeeId);
-    return employee ? employee.workHours : [];
+  deleteEmployee(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  addWorkHour(employeeId: number, date: string, hours: number): void {
-    const employee = this.employees.find(e => e.id === employeeId);
-    if (employee && hours > 0) {
-      employee.workHours.push({
-        id: this.nextWorkHourId++,
-        date: new Date(date),
-        hours,
-        selected: false
-      });
-    }
+  getWorkHours(employeeId: number): Observable<{ hours: WorkHour[]; totalHours: number }> {
+    return this.http.get<{ hours: WorkHour[]; totalHours: number }>(`${this.apiUrl}/${employeeId}/work-hours`);
   }
 
-  deleteWorkHours(employeeId: number, workHourIds: number[]): void {
-    const employee = this.employees.find(e => e.id === employeeId);
-    if (employee) {
-      employee.workHours = employee.workHours.filter(wh => !workHourIds.includes(wh.id));
-    }
+  addWorkHour(employeeId: number, workDate: string, workedHours: number): Observable<WorkHour> {
+    return this.http.post<WorkHour>(`${this.apiUrl}/${employeeId}/work-hours`, { work_date: workDate ,worked_hours : workedHours });
+  }
+
+  updateWorkHour(workId: number, workedHours: number): Observable<WorkHour> {
+    return this.http.put<WorkHour>(`${this.apiUrl}/work-hours/${workId}`, { worked_hours:workedHours });
+  }
+
+  deleteWorkHour(workId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/work-hours/${workId}`);
   }
 
   calculateMonthlySalary(employee: Employee, month: number, year: number): number {
+    if (!employee.workHours || employee.workHours.length === 0) {
+      return 0; // no work hours, so salary = 0
+    }
+  
     const hours = employee.workHours.reduce((sum, wh) => {
       const date = new Date(wh.date);
       return date.getMonth() === month && date.getFullYear() === year ? sum + wh.hours : sum;
     }, 0);
+  
     return hours * employee.hourlyRate;
   }
+  
 }

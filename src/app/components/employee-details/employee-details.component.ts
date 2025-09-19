@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Employee } from '../../models/employee.model';
 import { EmployeeService } from '../../services/employee.service';
+import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 interface WorkHour {
   id: number;
@@ -411,35 +413,76 @@ export class EmployeeDetailsComponent implements OnInit {
   }
 
   loadWorkHours(): void {
-    if (this.employee?.id) {
-      this.workHours = this.employeeService.getWorkHours(this.employee.id).map((wh: WorkHour) => ({
-        ...wh,
-        date: new Date(wh.date),
-        selected: wh.selected ?? false
-      }));
-    } else {
-      this.workHours = [];
-    }
+    if (!this.employee?.id) return;
+    this.employeeService.getWorkHours(this.employee.id).pipe(
+      map((response: any) => {
+        const hoursArray = response?.data?.hours ?? [];
+        return hoursArray.map((wh: any) => ({
+          id: wh.id,
+          employeeId: wh.employee_id,
+          date: new Date(wh.work_date),
+          hours: Number(wh.worked_hours) || 0, // <-- FIXED
+          selected: wh.selected ?? false
+        }));
+      })
+    ).subscribe({
+      next: (workHours) => this.workHours = workHours,
+      error: (error) => {
+        console.error('Error loading work hours:', error);
+        alert('Erreur lors du chargement des heures de travail.');
+        this.workHours = [];
+      }
+    });
   }
 
   trackByMonth: TrackByFunction<MonthlyData> = (index: number, monthData: MonthlyData) => monthData.month;
-
   trackByWorkHour: TrackByFunction<WorkHour> = (index: number, workHour: WorkHour) => workHour.id;
 
   addWorkHour(): void {
-    if (!this.employee?.id || !this.newWorkHour.date || this.newWorkHour.hours <= 0) {
-      alert('Veuillez entrer une date valide et un nombre d\'heures positif.');
+    if (!this.employee?.id || !this.newWorkHour.date) {
+      alert('Veuillez entrer une date valide.');
       return;
     }
-    this.employeeService.addWorkHour(this.employee.id, this.newWorkHour.date, this.newWorkHour.hours);
-    this.newWorkHour = {
-      date: new Date().toISOString().split('T')[0],
-      hours: 0
-    };
-    this.workHourAdded.emit();
-    this.loadWorkHours();
+  
+    // Ensure hours is a number
+    const hours = Number(this.newWorkHour.hours);
+  
+    console.log('Adding work hour:', { date: this.newWorkHour.date, hours });
+  
+    // Validate hours
+    if (isNaN(hours) || hours <= 0) {
+      alert('Veuillez entrer un nombre d\'heures positif.');
+      return;
+    }
+  
+    // Call the service
+    this.employeeService.addWorkHour(this.employee.id, this.newWorkHour.date, hours)
+      .subscribe({
+        next: (response) => {
+          console.log('Work hour added successfully:', response);
+  
+          // Reset form
+          this.newWorkHour = {
+            date: new Date().toISOString().split('T')[0],
+            hours: 0
+          };
+  
+          // Notify parent component
+          this.workHourAdded.emit();
+  
+          // Reload work hours
+          this.loadWorkHours();
+        },
+        error: (error) => {
+          console.error('Error adding work hour:', error);
+  
+          // Show backend error message if available
+          const msg = error?.error?.message || 'Erreur lors de l\'ajout des heures de travail.';
+          alert(msg);
+        }
+      });
   }
-
+  
   hasSelectedHours(): boolean {
     return this.workHours.some(wh => wh.selected);
   }
@@ -450,14 +493,21 @@ export class EmployeeDetailsComponent implements OnInit {
       return;
     }
     const selectedIds = this.workHours.filter(wh => wh.selected).map(wh => wh.id);
-    if (selectedIds.length === 0) {
+    if (!selectedIds.length) {
       alert('Veuillez sélectionner des heures à supprimer.');
       return;
     }
     if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedIds.length} entrée(s) d'heures ?`)) {
-      this.employeeService.deleteWorkHours(this.employee.id, selectedIds);
-      this.workHourAdded.emit();
-      this.loadWorkHours();
+      const deleteRequests: Observable<void>[] = selectedIds.map(id =>
+        this.employeeService.deleteWorkHour(id)
+      );
+      Promise.all(deleteRequests.map(obs => obs.toPromise())).then(() => {
+        this.workHourAdded.emit();
+        this.loadWorkHours();
+      }).catch(error => {
+        console.error('Error deleting work hours:', error);
+        alert('Erreur lors de la suppression des heures de travail.');
+      });
     }
   }
 
@@ -466,29 +516,23 @@ export class EmployeeDetailsComponent implements OnInit {
     this.workHours.forEach(wh => {
       const date = new Date(wh.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = [];
-      }
+      if (!monthlyData[monthKey]) monthlyData[monthKey] = [];
       monthlyData[monthKey].push(wh);
     });
 
     const monthNames = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      'Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'
     ];
 
-    return Object.keys(monthlyData)
-      .sort((a, b) => b.localeCompare(a))
-      .map(monthKey => {
-        const workHours = monthlyData[monthKey].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const totalHours = workHours.reduce((sum, wh) => sum + wh.hours, 0);
-        const totalAmount = totalHours * (this.employee?.hourlyRate || 0);
-        const [year, month] = monthKey.split('-');
-        const monthName = `${monthNames[parseInt(month) - 1]} ${year}`;
-        return { month: monthKey, monthName, workHours, totalHours, totalAmount };
-      });
+    return Object.keys(monthlyData).sort((a,b)=>b.localeCompare(a)).map(monthKey => {
+      const workHours = monthlyData[monthKey].sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+      const totalHours = workHours.reduce((sum, wh) => sum + wh.hours, 0);
+      const totalAmount = totalHours * (this.employee?.hourlyRate || 0);
+      const [year, month] = monthKey.split('-');
+      const monthName = `${monthNames[parseInt(month)-1]} ${year}`;
+      return { month: monthKey, monthName, workHours, totalHours, totalAmount };
+    });
   }
-
   toggleSelectAllMonth(month: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.workHours.forEach(wh => {
@@ -515,7 +559,7 @@ export class EmployeeDetailsComponent implements OnInit {
   }
 
   formatDate(date: Date): string {
-    return date.toLocaleDateString('fr-FR');
+    return new Date(date).toLocaleDateString('fr-FR');
   }
 
   getCurrentMonthHours(): number {
@@ -537,7 +581,7 @@ export class EmployeeDetailsComponent implements OnInit {
       <h2>Historique des Heures - ${this.employee?.name}</h2>
       ${this.getMonthlyData().map(monthData => `
         <h3>${monthData.monthName}</h3>
-        <table>
+        <table border="1" cellspacing="0" cellpadding="5">
           <thead>
             <tr>
               <th>Date</th>

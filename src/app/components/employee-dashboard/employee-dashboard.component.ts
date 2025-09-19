@@ -41,6 +41,8 @@ import { EmployeeDetailsComponent } from '../employee-details/employee-details.c
             </tr>
           </thead>
           <tbody>
+            <tr *ngIf="loading"> <td colspan="5">Chargement des employés...</td> </tr>
+            <tr *ngIf="!loading && employees.length === 0"> <td colspan="5">Aucun employé trouvé.</td> </tr>
             <tr *ngFor="let employee of employees; trackBy: trackByEmployeeId" class="employee-row">
               <td>
                 <button class="name-button" (click)="openEmployeeDetails(employee); $event.stopPropagation()">
@@ -61,6 +63,7 @@ import { EmployeeDetailsComponent } from '../employee-details/employee-details.c
             </tr>
           </tbody>
         </table>
+        <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
       </div>
 
       <!-- Modal de modification -->
@@ -304,8 +307,7 @@ import { EmployeeDetailsComponent } from '../employee-details/employee-details.c
     }
 
     .employee-row {
-      
-      transition: background-color 0.2
+      transition: background-color 0.2s;
     }
 
     .employee-row:hover {
@@ -376,6 +378,12 @@ import { EmployeeDetailsComponent } from '../employee-details/employee-details.c
       transform: translateY(-1px);
     }
 
+    .error-message {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -407,20 +415,21 @@ export class EmployeeDashboardComponent implements OnInit {
   selectedEmployee: Employee | null = null;
   showAddForm = false;
   editingEmployee: Employee | null = null;
-  
+  loading = false;
+  errorMessage: string | null = null;
+
   newEmployee = {
     name: '',
     phone: '',
     hourlyRate: 0
   };
-  
+
   editForm = {
     name: '',
     phone: '',
     hourlyRate: 0
   };
 
-  // Cache pour éviter recalculs
   private monthlySalaryCache = new Map<number, number>();
 
   constructor(private employeeService: EmployeeService) {}
@@ -430,23 +439,46 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   loadEmployees(): void {
-    this.employees = this.employeeService.getEmployees();
-    // Invalider cache après reload
-    this.monthlySalaryCache.clear();
+    this.loading = true;
+    this.errorMessage = null;
+    this.employeeService.getEmployees().subscribe({
+      next: (response) => {
+        this.employees = response.map((emp: any) => ({
+          id: emp.employee_id,                  // map backend -> frontend
+          name: emp.name,
+          phone: emp.phone,
+          hourlyRate: emp.hour_price, // convert string to number
+          workHours: emp.workHours || []
+        }));
+        console.log('Employees loaded:', response); // Debug
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading employees:', error);
+        this.errorMessage = 'Erreur lors du chargement des employés. Vérifiez le serveur.';
+        this.loading = false;
+      }
+    });
   }
 
-  // TrackBy corrigé : générique pour Employee, return l'ID (number)
   trackByEmployeeId: TrackByFunction<Employee> = (index: number, employee: Employee): number => employee.id;
 
   addEmployee(): void {
     if (this.newEmployee.name && this.newEmployee.phone && this.newEmployee.hourlyRate > 0) {
-      this.employeeService.addEmployee(
-        this.newEmployee.name,
+      this.employeeService.createEmployee(
         this.newEmployee.phone,
+        this.newEmployee.name,
         this.newEmployee.hourlyRate
-      );
-      this.cancelAdd();
-      this.loadEmployees();
+      ).subscribe({
+        next: () => {
+          this.cancelAdd();
+          this.loadEmployees();
+        },
+        error: (error) => {
+          console.error('Error adding employee:', error);
+          alert('Erreur lors de l\'ajout de l\'employé.');
+        }
+      });
     } else {
       alert('Veuillez remplir tous les champs correctement.');
     }
@@ -459,7 +491,7 @@ export class EmployeeDashboardComponent implements OnInit {
 
   editEmployee(employee: Employee): void {
     if (!employee) return;
-    this.editingEmployee = { ...employee }; // Copie pour éviter mutation
+    this.editingEmployee = { ...employee };
     this.editForm = {
       name: employee.name,
       phone: employee.phone,
@@ -471,12 +503,19 @@ export class EmployeeDashboardComponent implements OnInit {
     if (this.editingEmployee && this.editForm.name && this.editForm.phone && this.editForm.hourlyRate > 0) {
       this.employeeService.updateEmployee(
         this.editingEmployee.id,
-        this.editForm.name,
         this.editForm.phone,
+        this.editForm.name,
         this.editForm.hourlyRate
-      );
-      this.cancelEdit();
-      this.loadEmployees();
+      ).subscribe({
+        next: () => {
+          this.cancelEdit();
+          this.loadEmployees();
+        },
+        error: (error) => {
+          console.error('Error updating employee:', error);
+          alert('Erreur lors de la mise à jour de l\'employé.');
+        }
+      });
     } else {
       alert('Veuillez remplir tous les champs correctement.');
     }
@@ -500,20 +539,26 @@ export class EmployeeDashboardComponent implements OnInit {
 
   openEmployeeDetails(employee: Employee): void {
     if (!employee) return;
-    console.log('Ouverture détails pour:', employee.name); // Debug - enlève si OK
-    // Copie shallow pour éviter mutation directe
+    console.log('Ouverture détails pour:', employee.name);
     this.selectedEmployee = { ...employee };
   }
 
   closeEmployeeDetails(): void {
     this.selectedEmployee = null;
-    this.monthlySalaryCache.clear(); // Invalider si besoin
+    this.monthlySalaryCache.clear();
   }
 
   deleteEmployee(id: number): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-      this.employeeService.deleteEmployee(id);
-      this.loadEmployees();
+      this.employeeService.deleteEmployee(id).subscribe({
+        next: () => {
+          this.loadEmployees();
+        },
+        error: (error) => {
+          console.error('Error deleting employee:', error);
+          alert('Erreur lors de la suppression de l\'employé.');
+        }
+      });
     }
   }
 

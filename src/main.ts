@@ -6,6 +6,7 @@ import { LoginComponent } from './app/components/login/login.component';
 import { DashboardComponent } from './app/components/dashboard/dashboard.component';
 import { EmployeeDashboardComponent } from './app/components/employee-dashboard/employee-dashboard.component';
 import { ClientDashboardComponent } from './app/components/client-dashboard/client-dashboard.component';
+import { provideHttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ import { ClientDashboardComponent } from './app/components/client-dashboard/clie
     <div class="app-container" *ngIf="isAuthenticated">
       <header class="app-header">
         <div class="header-content">
-          <img src="src/app/logo.jpg" alt="Logo de la marque" class="logo">
+          <img src="assets/logo.jpg" alt="Logo de la marque" class="logo">
           <h1 class="app-title">🌹 Système de Gestion d'atelier de robes</h1>
           <button class="logout-btn" (click)="logout()">
             🚪 Déconnexion
@@ -227,4 +228,9 @@ export class App implements OnInit {
   }
 }
 
-bootstrapApplication(App);
+bootstrapApplication(App, {
+  providers: [
+    provideHttpClient()
+  ]
+}
+);
