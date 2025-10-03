@@ -1,0 +1,226 @@
+<div class="modal-overlay" (click)="close.emit()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📋 Historique des Commandes - {{ client.name }}</h3>
+      <button class="close-btn" (click)="close.emit()">✕</button>
+    </div>
+
+    <div class="totals-section">
+      <div class="total-item">
+        <span>💰 Prix Total:</span>
+        <span class="value">{{ totals.total }} DT</span>
+      </div>
+      <div class="total-item">
+        <span>✅ Prix Payé:</span>
+        <span class="value paid">{{ totals.paid }} DT</span>
+      </div>
+      <div class="total-item remaining">
+        <span>⏳ Reste à Payer:</span>
+        <span class="value">{{ totals.remaining }} DT</span>
+      </div>
+    </div>
+
+    <div class="add-order-section">
+      <button class="add-order-btn custom" (click)="showCustomOrderForm = true">
+        ➕ Ajouter Autre
+      </button>
+    </div>
+
+    <div class="modal-overlay custom-order-modal" *ngIf="showCustomOrderForm" (click)="closeCustomOrderForm()">
+      <div class="modal-content custom-order-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>➕ Nouvelle Commande Personnalisée</h3>
+          <button class="close-btn" (click)="closeCustomOrderForm()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Type de commande:</label>
+            <input type="text" [(ngModel)]="customOrder.productName" placeholder="Ex: Veste" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Prix (DT):</label>
+            <input type="number" [(ngModel)]="customOrder.price" placeholder="Ex: 300" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Quantité :</label>
+            <input type="number" [(ngModel)]="customOrder.quantity" placeholder="Ex: 1" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Statut Livraison:</label>
+            <select [(ngModel)]="customOrder.status" class="form-input">
+              <option value="non livree">Non livrée</option>
+              <option value="livree">Livrée</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button class="save-btn" (click)="addCustomOrder()">💾 Enregistrer</button>
+            <button class="cancel-btn" (click)="closeCustomOrderForm()">❌ Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders-history">
+      <div class="action-buttons">
+        <button class="delete-btn" (click)="deleteSelectedItems('orders')" 
+                [disabled]="!hasSelectedOrders()">🗑️ Supprimer Sélectionnés</button>
+        <button class="print-btn" (click)="printSelectedOrders()" 
+                [disabled]="!hasSelectedOrders()">🖨️ Imprimer Commandes Sélectionnées</button>
+      </div>
+      <div class="orders-table-container">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" (change)="toggleSelectAllOrders($event)" 
+                       [checked]="allOrdersSelected">
+              </th>
+              <th>Produit</th>
+              <th>Prix Unitaire</th>
+              <th>Quantité</th>
+              <th>Date</th>
+              <th>Prix Total</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of client.orders; trackBy: trackByOrderId" class="order-row">
+              <td>
+                <input type="checkbox" [(ngModel)]="order.selected" 
+                      (change)="updateSelectionsAndTotals()">
+              </td>
+              <td class="order-type">
+                <span *ngIf="!order.isEditing">{{ order.productName || getProductName(order.productId) }}</span>
+                <input *ngIf="order.isEditing && order.editData" type="text"
+                       [(ngModel)]="order.editData.productName" class="form-input small">
+              </td>
+              <td>
+                <span *ngIf="!order.isEditing">{{ order.productPrice || getProductPrice(order.productId) }} DT</span>
+                <input *ngIf="order.isEditing && order.editData" type="number" step="10"
+                       [(ngModel)]="order.editData.productPrice" class="form-input small"> 
+              </td>
+              <td>
+                <span *ngIf="!order.isEditing">{{ order.quantity }}</span>
+                <input *ngIf="order.isEditing && order.editData" type="number"
+                       [(ngModel)]="order.editData.quantity" class="form-input small">
+              </td>
+              <td>
+                <span *ngIf="!order.isEditing">{{ formatDate(order.production_date) }}</span>
+                <input *ngIf="order.isEditing && order.editData" type="date"
+                       [(ngModel)]="order.editData.production_date" class="form-input small">
+              </td>
+              <td class="price">
+                <span *ngIf="!order.isEditing">{{ (order.productPrice || getProductPrice(order.productId)) * order.quantity }} DT</span>
+                <span *ngIf="order.isEditing && order.editData">{{ (order.editData.productPrice || 0) * (order.editData.quantity || 0) }} DT</span>
+              </td>
+              <td>
+                <select *ngIf="!order.isEditing" [(ngModel)]="order.status" 
+                        (change)="updateOrderStatus(order)"
+                        class="status-select delivery">
+                  <option value="non livree">Non livrée</option>
+                  <option value="livree">Livrée</option>
+                </select>
+                <select *ngIf="order.isEditing && order.editData" [(ngModel)]="order.editData.status"
+                        class="status-select delivery">
+                  <option value="non livree">Non livrée</option>
+                  <option value="livree">Livrée</option>
+                </select>
+              </td>
+              <td>
+                <div class="action-buttons-inline">
+                  <button *ngIf="!order.isEditing" class="edit-btn" (click)="startEditOrder(order)">
+                    ✏️ Modifier
+                  </button>
+                  <button *ngIf="order.isEditing" class="save-btn small" (click)="updateOrder(order)">
+                    💾 Sauver
+                  </button>
+                  <button *ngIf="order.isEditing" class="cancel-btn small" (click)="cancelEditOrder(order)">
+                    ❌ Annuler
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!client?.orders || client.orders.length === 0">
+              <td colspan="8" class="empty-state">
+                <span>📦 Aucune commande enregistrée</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="payment-history">
+      <h4>📋 Historique des Paiements</h4>
+      <div class="action-buttons">
+        <button class="delete-btn" (click)="deleteSelectedItems('payments')" 
+                [disabled]="!hasSelectedPayments()">🗑️ Supprimer Sélectionnés</button>
+        <button class="print-btn" (click)="printSelectedPayments()" 
+                [disabled]="!hasSelectedPayments()">🖨️ Imprimer Paiements Sélectionnés</button>
+      </div>
+      <div class="payment-table-container">
+        <table class="payment-table">
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" (change)="toggleSelectAllPayments($event)" 
+                       [checked]="allPaymentsSelected">
+              </th>
+              <th>Date</th>
+              <th>Montant</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of client.payments; trackBy: trackByPaymentId">
+              <td>
+                <input type="checkbox" [(ngModel)]="payment.selected" 
+                       (change)="updateSelectionsAndTotals()">
+              </td>
+              <td>
+                <span *ngIf="!payment.isEditing">{{ formatDate(payment.payment_date) }}</span>
+                <input *ngIf="payment.isEditing && payment.editData" type="date" 
+                       [(ngModel)]="payment.editData.payment_date" class="form-input small">
+              </td>
+              <td>
+                <span *ngIf="!payment.isEditing">{{ payment.amount }} DT</span>
+                <input *ngIf="payment.isEditing && payment.editData" type="number" step="10"
+                       [(ngModel)]="payment.editData.amount" class="form-input small">
+              </td>
+              <td>
+                <div class="action-buttons-inline">
+                  <button *ngIf="!payment.isEditing" class="edit-btn" (click)="startEditPayment(payment)">
+                    ✏️ Modifier
+                  </button>
+                  <button *ngIf="payment.isEditing" class="save-btn small" (click)="updatePayment(payment)">
+                    💾 Sauver
+                  </button>
+                  <button *ngIf="payment.isEditing" class="cancel-btn small" (click)="cancelEditPayment(payment)">
+                    ❌ Annuler
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!client?.payments || client.payments.length === 0">
+              <td colspan="4" class="empty-state">
+                <span>💳 Aucun paiement enregistré</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="payment-section">
+      <h4>📝 Enregistrer un Paiement</h4>
+      <div class="form-group">
+        <label>Date Paiement:</label>
+        <input type="date" [(ngModel)]="newPayment.payment_date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>Montant Payé (DT):</label>
+        <input type="number" step="10" [(ngModel)]="newPayment.amount" placeholder="Ex: 100" class="form-input">
+      </div>
+      <button class="add-payment-btn" (click)="addPayment()">💸 Ajouter Paiement</button>
+    </div>
+  </div>
+</div>

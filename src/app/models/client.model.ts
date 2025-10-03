@@ -5,21 +5,28 @@ export interface Client {
   orders: Order[];
   payments: Payment[];
 }
+export interface ProductCatalog {
+  id: number;
+  name: string;
+  price: number;
+}
 
 export interface Order {
   id: number;
   clientId: number;
-  date: string;
-  type: string;
-  price: number;
-  deliveryStatus: 'en attente' | 'livrée' | 'non livrée';
+  productId: number;
+  productName?: string; // Optional, for easier display
+  productPrice: number; // Optional, for easier display
+  quantity: number;
+  production_date: string;
+  status: 'non livree' | 'livree';
   selected?: boolean;
 }
 
 export interface Payment {
   id: number;
   clientId: number;
-  date: string;
+  payment_date: string;
   amount: number;
   selected?: boolean;
 }

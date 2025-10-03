@@ -450,7 +450,7 @@ export class EmployeeDetailsComponent implements OnInit {
     console.log('Adding work hour:', { date: this.newWorkHour.date, hours });
   
     // Validate hours
-    if (isNaN(hours) || hours <= 0) {
+    if (isNaN(hours) || hours < 0) {
       alert('Veuillez entrer un nombre d\'heures positif.');
       return;
     }

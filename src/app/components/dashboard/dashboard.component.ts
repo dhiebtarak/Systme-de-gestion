@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule], // Add HttpClientModule
   template: `
-    <div class="dashboard-container fade-in">
+    <div class="dashboard-container fade-in" *ngIf="stats; else loading">
       <div class="dashboard-header">
         <div class="header-content">
           <h2 class="gradient-text">Tableau de Bord</h2>
@@ -24,7 +25,7 @@ import { DashboardService } from '../../services/dashboard.service';
           </div>
           <div class="summary-item">
             <span class="summary-label">Tendance du Mois</span>
-            <span class="summary-trend">↗️ +12%</span>
+            <span class="summary-trend">↗️ {{ trend }}%</span>
           </div>
         </div>
       </div>
@@ -40,7 +41,7 @@ import { DashboardService } from '../../services/dashboard.service';
             <h3 class="stat-number">{{ formatNumber(stats.totalRevenue) }} <span class="currency">DT</span></h3>
             <p class="stat-label">Chiffre d'Affaires</p>
             <div class="stat-progress">
-              <div class="progress-bar" style="width: 85%"></div>
+              <div class="progress-bar" [style.width]="calculateProgress(stats.totalRevenue, 100000)"></div>
             </div>
           </div>
         </div>
@@ -55,7 +56,7 @@ import { DashboardService } from '../../services/dashboard.service';
             <h3 class="stat-number">{{ stats.totalClients }}</h3>
             <p class="stat-label">Clients Total</p>
             <div class="stat-progress">
-              <div class="progress-bar" style="width: 70%"></div>
+              <div class="progress-bar" [style.width]="calculateProgress(stats.totalClients, 100)"></div>
             </div>
           </div>
         </div>
@@ -70,7 +71,7 @@ import { DashboardService } from '../../services/dashboard.service';
             <h3 class="stat-number">{{ stats.pendingOrders }}</h3>
             <p class="stat-label">Commandes en Attente</p>
             <div class="stat-progress">
-              <div class="progress-bar" style="width: 45%"></div>
+              <div class="progress-bar" [style.width]="calculateProgress(stats.pendingOrders, 50)"></div>
             </div>
           </div>
         </div>
@@ -85,7 +86,7 @@ import { DashboardService } from '../../services/dashboard.service';
             <h3 class="stat-number">{{ formatNumber(stats.pendingAmount) }} <span class="currency">DT</span></h3>
             <p class="stat-label">Montant en Attente</p>
             <div class="stat-progress">
-              <div class="progress-bar" style="width: 60%"></div>
+              <div class="progress-bar" [style.width]="calculateProgress(stats.pendingAmount, 5000)"></div>
             </div>
           </div>
         </div>
@@ -100,7 +101,7 @@ import { DashboardService } from '../../services/dashboard.service';
             <h3 class="stat-number">{{ stats.deliveredThisMonth }}</h3>
             <p class="stat-label">Livrées ce Mois</p>
             <div class="stat-progress">
-              <div class="progress-bar" style="width: 90%"></div>
+              <div class="progress-bar" [style.width]="calculateProgress(stats.deliveredThisMonth, 100)"></div>
             </div>
           </div>
         </div>
@@ -116,9 +117,11 @@ import { DashboardService } from '../../services/dashboard.service';
         </div>
       </div>
     </div>
+    <ng-template #loading>
+      <div class="loading">Chargement des données...</div>
+    </ng-template>
   `,
-  styles: [`
-    .dashboard-container {
+  styles: [ `.dashboard-container {
       padding: 24px;
       max-width: 1400px;
       margin: 0 auto;
@@ -490,6 +493,8 @@ export class DashboardComponent implements OnInit {
     pendingAmount: 0,
     deliveredThisMonth: 0
   };
+  trend: number = 12; // Temporary value, should come from service
+  error: string | null = null;
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -498,7 +503,16 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats(): void {
-    this.stats = this.dashboardService.getDashboardStats();
+    this.dashboardService.getDashboardStats().subscribe({
+      next: (data) => {
+        this.stats = data;
+        this.error = null;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des statistiques:', err);
+        this.error = 'Impossible de charger les statistiques. Veuillez réessayer.';
+      }
+    });
   }
 
   formatNumber(num: number): string {
@@ -513,5 +527,10 @@ export class DashboardComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  calculateProgress(value: number, max: number): string {
+    const percentage = Math.min((value / max) * 100, 100);
+    return `${percentage}%`;
   }
 }

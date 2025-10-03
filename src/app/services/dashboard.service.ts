@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
+import { Observable, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ClientService } from './client.service';
-import { Client, Order } from '../models/client.model';
+import { Client, ProductCatalog } from '../models/client.model';
 
 @Injectable({
   providedIn: 'root'
@@ -8,54 +10,43 @@ import { Client, Order } from '../models/client.model';
 export class DashboardService {
   constructor(private clientService: ClientService) {}
 
-  getDashboardStats(): {
+  getDashboardStats(): Observable<{
     totalRevenue: number;
     totalClients: number;
     pendingOrders: number;
     pendingAmount: number;
     deliveredThisMonth: number;
-  } {
-    const clients = this.clientService.getClients();
-    
-    const totalRevenue = clients
-      .flatMap(client => client.orders || [])
-      .reduce((sum, order) => sum + order.price, 0);
+  }> {
+    return combineLatest([
+      this.clientService.getClients(),
+      this.clientService.getProductCatalog()
+    ]).pipe(
+      map(([clients, productCatalog]) => {
+        const totalClients = clients.length;
+        const orders = clients.flatMap(client => client.orders || []);
+        const payments = clients.flatMap(client => client.payments || []);
+        const totalRevenue = orders.reduce((sum, order) => {
+          const product = productCatalog.find(p => p.id === order.productId);
+          return product ? sum + (product.price * order.quantity) : sum;
+        }, 0);
+        const pendingOrders = orders.filter(o => o.status === 'non livree').length;
+        const pendingAmount = totalRevenue - payments.reduce((sum, p) => sum + p.amount, 0);
+        const deliveredThisMonth = orders.filter(o => {
+          const date = new Date(o.production_date);
+          const now = new Date();
+          return o.status === 'livree' && 
+                 date.getMonth() === now.getMonth() && 
+                 date.getFullYear() === now.getFullYear();
+        }).length;
 
-    const totalClients = clients.length;
-
-    const pendingOrders = clients
-      .flatMap(client => client.orders || [])
-      .filter(order => order.deliveryStatus === 'en attente')
-      .length;
-
-    const pendingAmount = clients
-      .flatMap(client => {
-        const totalPaid = (client.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
-        const totalOrderPrice = (client.orders || []).reduce((sum, order) => sum + order.price, 0);
-        return totalPaid < totalOrderPrice ? totalOrderPrice - totalPaid : 0;
+        return {
+          totalRevenue,
+          totalClients,
+          pendingOrders,
+          pendingAmount: Math.max(0, pendingAmount),
+          deliveredThisMonth
+        };
       })
-      .reduce((sum, amount) => sum + amount, 0);
-
-    const deliveredThisMonth = clients
-      .flatMap(client => client.orders || [])
-      .filter(order => {
-        const orderDate = new Date(order.date);
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        return (
-          order.deliveryStatus === 'livrée' &&
-          orderDate.getMonth() === currentMonth &&
-          orderDate.getFullYear() === currentYear
-        );
-      })
-      .length;
-
-    return {
-      totalRevenue,
-      totalClients,
-      pendingOrders,
-      pendingAmount,
-      deliveredThisMonth
-    };
+    );
   }
 }

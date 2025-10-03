@@ -1,0 +1,83 @@
+<div class="dashboard-container">
+    <div class="header">
+      <h2>👰 Gestion des Clients </h2>
+      <button class="add-btn" (click)="showAddForm = !showAddForm">
+        ➕ Ajouter Client
+      </button>
+    </div>
+    
+    <div class="add-form" *ngIf="showAddForm">
+      <h3>Ajouter un Nouveau Client</h3>
+      <div class="form-row">
+        <input type="text" [(ngModel)]="newClient.name" placeholder="Nom complet" class="form-input">
+        <input type="tel" [(ngModel)]="newClient.phone" placeholder="Téléphone" class="form-input">
+        <button class="save-btn" (click)="addClient()">💾 Enregistrer</button>
+        <button class="cancel-btn" (click)="cancelAdd()">❌ Annuler</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="clients-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Commandes</th>
+            <th>Total Dû</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let client of clients" class="client-row">
+            <td>
+              <button class="name-button" (click)="openClientDetails(client)">
+                {{ client.name }}
+              </button>
+            </td>
+            <td>{{ client.phone }}</td>
+            <td class="orders-count">{{ client.orders.length }}</td>
+            <td class="total-amount">{{ clientBalances[client.id] || 0 }} DT</td>
+            <td>
+              <button class="edit-btn" (click)="editClient(client)">
+                ✏️ Modifier
+              </button>
+              <button class="delete-btn" (click)="deleteClient(client.id)">
+                🗑️ Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal de modification -->
+    <div class="modal-overlay" *ngIf="editingClient" (click)="cancelEdit()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>✏️ Modifier Client</h3>
+          <button class="close-btn" (click)="cancelEdit()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nom:</label>
+            <input type="text" [(ngModel)]="editForm.name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Téléphone:</label>
+            <input type="tel" [(ngModel)]="editForm.phone" class="form-input">
+          </div>
+          <div class="modal-actions">
+            <button class="save-btn" (click)="saveClient()">💾 Enregistrer</button>
+            <button class="cancel-btn" (click)="cancelEdit()">❌ Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-client-details
+    *ngIf="selectedClient"
+    [client]="selectedClient"
+    (close)="closeClientDetails()"
+    (orderAdded)="onOrderAdded()">
+  </app-client-details>
