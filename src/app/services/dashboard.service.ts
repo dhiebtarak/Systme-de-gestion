@@ -3,12 +3,20 @@ import { Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ClientService } from './client.service';
 import { Client, ProductCatalog } from '../models/client.model';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  constructor(private clientService: ClientService) {}
+  private apiUrl = 'http://localhost:5001/api/V1/dashboard';
+  constructor(private http: HttpClient, private clientService: ClientService) {}
+  // Dashboard Statistics
+  getDashbordTotalRevenue(): Observable<number> {
+    return this.http.get<{ status: number; message: string; data: number }>(`${this.apiUrl}/total_revenue`)
+      .pipe(
+        map(response => response.data));
+  }
 
   getDashboardStats(): Observable<{
     totalRevenue: number;

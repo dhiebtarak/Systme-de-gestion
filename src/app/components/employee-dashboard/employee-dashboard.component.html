@@ -1,0 +1,114 @@
+<div class="dashboard-container">
+    <div class="header">
+      <h2>👥 Gestion des Employés</h2>
+      <button class="add-btn" (click)="showAddForm = !showAddForm">
+        ➕ Ajouter Employé
+      </button>
+    </div>
+    
+    <div class="add-form" *ngIf="showAddForm">
+      <h3>Ajouter un Nouvel Employé</h3>
+      <div class="form-row">
+        <input type="text" [(ngModel)]="newEmployee.name" placeholder="Nom complet" class="form-input">
+        <input type="tel" [(ngModel)]="newEmployee.phone" placeholder="Téléphone" class="form-input">
+        <select [(ngModel)]="newEmployee.employeeType" class="form-input">
+          <option value="">Sélectionner le type</option>
+          <option value="hourly">Horaire</option>
+          <option value="monthly">Mensuel</option>
+        </select>
+        <div *ngIf="newEmployee.employeeType === 'hourly'" class="conditional-input">
+          <input type="number" [(ngModel)]="newEmployee.hourlyRate" placeholder="Taux horaire (DT)" class="form-input">
+        </div>
+        <div *ngIf="newEmployee.employeeType === 'monthly'" class="conditional-input">
+          <input type="number" [(ngModel)]="newEmployee.monthlySalary" placeholder="Salaire mensuel (DT)" class="form-input">
+        </div>
+        <button class="save-btn" (click)="addEmployee()">💾 Enregistrer</button>
+        <button class="cancel-btn" (click)="cancelAdd()">❌ Annuler</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="employees-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Type</th>
+            <th>Taux Horaire / Mensuel</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading"> <td colspan="6">Chargement des employés...</td> </tr>
+          <tr *ngIf="!loading && employees.length === 0"> <td colspan="6">Aucun employé trouvé.</td> </tr>
+          <tr *ngFor="let employee of employees; trackBy: trackByEmployeeId" class="employee-row">
+            <td>
+              <button class="name-button" (click)="openEmployeeDetails(employee); $event.stopPropagation()">
+                {{ employee.name }}
+              </button>
+            </td>
+            <td>{{ employee.phone }}</td>
+            <td class="employee-type">{{ getEmployeeTypeLabel(employee.employeeType) }}</td>
+            <td class="rate-field">
+              <span *ngIf="employee.employeeType === 'hourly'">{{ employee.hourlyRate }} DT/h</span>
+              <span *ngIf="employee.employeeType === 'monthly'">{{ employee.monthlySalary }} DT/mois</span>
+            </td>
+            <td>
+              <button class="edit-btn" (click)="editEmployee(employee); $event.stopPropagation()">
+                ✏️ Modifier
+              </button>
+              <button class="delete-btn" (click)="deleteEmployee(employee.id); $event.stopPropagation()">
+                🗑️ Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    </div>
+
+    <!-- Modal de modification -->
+    <div class="modal-overlay" *ngIf="editingEmployee" (click)="cancelEdit()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>✏️ Modifier Employé</h3>
+          <button class="close-btn" (click)="cancelEdit()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nom:</label>
+            <input type="text" [(ngModel)]="editForm.name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Téléphone:</label>
+            <input type="tel" [(ngModel)]="editForm.phone" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Type d'employé:</label>
+            <select [(ngModel)]="editForm.employeeType" class="form-input">
+              <option value="hourly">Horaire</option>
+              <option value="monthly">Mensuel</option>
+            </select>
+          </div>
+          <div *ngIf="editForm.employeeType === 'hourly'" class="form-group conditional-input">
+            <label>Taux Horaire (DT):</label>
+            <input type="number" [(ngModel)]="editForm.hourlyRate" class="form-input">
+          </div>
+          <div *ngIf="editForm.employeeType === 'monthly'" class="form-group conditional-input">
+            <label>Salaire Mensuel (DT):</label>
+            <input type="number" [(ngModel)]="editForm.monthlySalary" class="form-input">
+          </div>
+          <div class="modal-actions">
+            <button class="save-btn" (click)="saveEmployee(); $event.stopPropagation()">💾 Enregistrer</button>
+            <button class="cancel-btn" (click)="cancelEdit(); $event.stopPropagation()">❌ Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <app-employee-details
+      *ngIf="selectedEmployee"
+      [employee]="selectedEmployee"
+      (close)="closeEmployeeDetails()"
+      (workHourAdded)="onWorkHourAdded()">
+    </app-employee-details>

@@ -10,5 +10,7 @@ export interface Employee {
   name: string;       // Maps to name
   phone: string;      // Maps to phone
   hourlyRate: number; // Maps to hour_price
+  employeeType: string; // Maps to employee_type
+  monthlySalary: number; // Maps to monthly_salary
   workHours: WorkHour[];
 }

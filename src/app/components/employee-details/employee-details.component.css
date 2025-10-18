@@ -1,0 +1,281 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #fce4ec;
+    background: linear-gradient(135deg, #e91e63, #ad1457);
+    color: white;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .delete-hours-section {
+    padding: 15px 20px;
+    background: #ffebee;
+    border-bottom: 1px solid #ffcdd2;
+    text-align: center;
+  }
+
+  .delete-selected-btn {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .delete-selected-btn:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    transform: translateY(-2px);
+  }
+
+  .add-hours-section {
+    padding: 20px;
+    background: #fce4ec;
+    border-bottom: 1px solid #f8bbd9;
+  }
+
+  .add-hours-section h4 {
+    margin: 0 0 15px 0;
+    color: #880e4f;
+  }
+
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 15px;
+  }
+
+  .form-group label {
+    min-width: 150px;
+    font-weight: 600;
+    color: #ad1457;
+  }
+
+  .form-input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #f8bbd9;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background: white;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #e91e63;
+  }
+
+  .add-btn {
+    background: linear-gradient(135deg, #4caf50, #388e3c);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+
+  .add-btn:hover {
+    background: linear-gradient(135deg, #388e3c, #2e7d32);
+  }
+
+  .hours-history {
+    padding: 20px;
+  }
+
+  .hours-history h4 {
+    margin: 0 0 20px 0;
+    color: #880e4f;
+  }
+
+  .month-section {
+    margin-bottom: 30px;
+    border: 1px solid #f8bbd9;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .month-header {
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f8bbd9;
+  }
+
+  .month-header h5 {
+    margin: 0;
+    color: #880e4f;
+    font-size: 1.2rem;
+  }
+
+  .month-summary {
+    font-weight: 600;
+    color: #ad1457;
+  }
+
+  .hours-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .hours-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .hours-table th {
+    background: linear-gradient(135deg, #880e4f, #ad1457);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+  }
+
+  .hour-row {
+    border-bottom: 1px solid #f8f9fa;
+  }
+
+  .hour-row:hover {
+    background: #fce4ec;
+  }
+
+  .hour-row td {
+    padding: 12px;
+    text-align: center;
+  }
+
+  .amount {
+    font-weight: 600;
+    color: #c2185b;
+  }
+
+  .summary {
+    background: #fce4ec;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #f8bbd9;
+    margin-top: 20px;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 1rem;
+  }
+
+  .summary-item.total {
+    border-top: 2px solid #e91e63;
+    padding-top: 10px;
+    margin-top: 15px;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .summary-item .value {
+    color: #c2185b;
+    font-weight: 600;
+  }
+
+  .action-buttons {
+    padding: 15px 20px;
+    background: #fce4ec;
+    border-top: 1px solid #f8bbd9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .delete-btn {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .delete-btn:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    transform: translateY(-2px);
+  }
+
+  .print-btn {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .print-btn:hover {
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    transform: translateY(-2px);
+  }

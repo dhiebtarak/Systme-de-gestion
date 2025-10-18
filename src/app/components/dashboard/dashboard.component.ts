@@ -61,21 +61,6 @@ import { DashboardService } from '../../services/dashboard.service';
           </div>
         </div>
         
-        <div class="stat-card pending glass-effect hover-lift">
-          <div class="card-background"></div>
-          <div class="stat-header">
-            <div class="stat-icon pending-icon">⏳</div>
-            <div class="stat-badge">En cours</div>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-number">{{ stats.pendingOrders }}</h3>
-            <p class="stat-label">Commandes en Attente</p>
-            <div class="stat-progress">
-              <div class="progress-bar" [style.width]="calculateProgress(stats.pendingOrders, 50)"></div>
-            </div>
-          </div>
-        </div>
-        
         <div class="stat-card pending-amount glass-effect hover-lift">
           <div class="card-background"></div>
           <div class="stat-header">
@@ -480,6 +465,7 @@ import { DashboardService } from '../../services/dashboard.service';
   `]
 })
 export class DashboardComponent implements OnInit {
+  totalRevenue: number = 0; // Temporary value, should come from service
   stats: {
     totalRevenue: number;
     totalClients: number;
