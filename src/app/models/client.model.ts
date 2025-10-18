@@ -22,6 +22,14 @@ export interface Order {
   status: 'non livree' | 'livree';
   selected?: boolean;
 }
+export interface Product {
+  id: number;
+  clientId: number;
+  productId: number;
+  quantity: number;
+  production_date: string;
+  status: 'non livree' | 'livree';
+}
 
 export interface Payment {
   id: number;

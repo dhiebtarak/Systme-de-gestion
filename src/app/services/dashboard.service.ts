@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ClientService } from './client.service';
-import { Client, ProductCatalog } from '../models/client.model';
+import { Client, Product, ProductCatalog } from '../models/client.model';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({
@@ -18,40 +18,37 @@ export class DashboardService {
         map(response => response.data));
   }
 
+  getClientsBalanceOwed() : Observable<number> {
+    return this.http.get<{ status: number; message: string; data: number }>(`${this.apiUrl}/clients_balance_owed`)
+      .pipe(
+        map(response => response.data));
+  }
+  getProducts(): Observable<Product[]> {
+    return this.http
+      .get<{ status: number; message: string; data: Product[] }>(`http://localhost:5001/api/V1/products`)
+      .pipe(map(response => response.data));
+  }
+
   getDashboardStats(): Observable<{
-    totalRevenue: number;
     totalClients: number;
-    pendingOrders: number;
-    pendingAmount: number;
     deliveredThisMonth: number;
   }> {
     return combineLatest([
       this.clientService.getClients(),
-      this.clientService.getProductCatalog()
+      this.getProducts()
     ]).pipe(
-      map(([clients, productCatalog]) => {
+      map(([clients, products]) => {
         const totalClients = clients.length;
-        const orders = clients.flatMap(client => client.orders || []);
-        const payments = clients.flatMap(client => client.payments || []);
-        const totalRevenue = orders.reduce((sum, order) => {
-          const product = productCatalog.find(p => p.id === order.productId);
-          return product ? sum + (product.price * order.quantity) : sum;
-        }, 0);
-        const pendingOrders = orders.filter(o => o.status === 'non livree').length;
-        const pendingAmount = totalRevenue - payments.reduce((sum, p) => sum + p.amount, 0);
-        const deliveredThisMonth = orders.filter(o => {
-          const date = new Date(o.production_date);
+        const deliveredThisMonth = (products || []).filter((p: Product) => {
+          const date = new Date(p.production_date);
           const now = new Date();
-          return o.status === 'livree' && 
-                 date.getMonth() === now.getMonth() && 
+          return p.status === 'livree' &&
+                 date.getMonth() === now.getMonth() &&
                  date.getFullYear() === now.getFullYear();
         }).length;
 
         return {
-          totalRevenue,
           totalClients,
-          pendingOrders,
-          pendingAmount: Math.max(0, pendingAmount),
           deliveredThisMonth
         };
       })
