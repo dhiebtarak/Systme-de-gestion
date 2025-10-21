@@ -8,7 +8,8 @@ import { Client, Order, Payment, ProductCatalog } from '../models/client.model';
   providedIn: 'root'
 })
 export class ClientService {
-  private apiUrl = 'http://localhost:5001/api/V1/clients';
+  // private apiUrl = 'http://localhost:5001/api/V1/clients';
+  private apiUrl = "https://backend-system-de-gestion.onrender.com/api/V1/clients";
   constructor(private http: HttpClient) {}
 
   // Clients Management

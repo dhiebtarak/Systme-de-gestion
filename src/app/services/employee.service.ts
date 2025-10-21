@@ -8,8 +8,8 @@ import { map, switchMap, catchError } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class EmployeeService {
-  private apiUrl = 'http://localhost:5001/api/V1/employees'; // Example API URL
-
+  // private apiUrl = 'http://localhost:5001/api/V1/employees'; // Example API URL
+  private apiUrl = "https://backend-system-de-gestion.onrender.com/api/V1/employees";
   constructor(private http: HttpClient) {}
 
   getEmployees(): Observable<Employee[]> {

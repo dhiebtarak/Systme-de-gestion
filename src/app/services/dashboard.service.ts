@@ -9,7 +9,8 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root'
 })
 export class DashboardService {
-  private apiUrl = 'http://localhost:5001/api/V1/dashboard';
+  // private apiUrl = 'http://localhost:5001/api/V1/dashboard';
+  private apiUrl = "https://backend-system-de-gestion.onrender.com/api/V1/dashboard";
   constructor(private http: HttpClient, private clientService: ClientService) {}
   // Dashboard Statistics
   getDashbordTotalRevenue(): Observable<number> {
@@ -25,7 +26,7 @@ export class DashboardService {
   }
   getProducts(): Observable<Product[]> {
     return this.http
-      .get<{ status: number; message: string; data: Product[] }>(`http://localhost:5001/api/V1/products`)
+      .get<{ status: number; message: string; data: Product[] }>(`${this.apiUrl}/products`)
       .pipe(map(response => response.data));
   }
 
