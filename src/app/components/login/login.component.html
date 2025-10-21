@@ -1,0 +1,48 @@
+<div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>🌹 Système de Gestion</h1>
+        <p>Connexion Administrateur</p>
+      </div>
+      
+      <form (ngSubmit)="onLogin()" class="login-form">
+        <div class="form-group">
+          <label for="username">👤 Nom d'utilisateur</label>
+          <input 
+            type="text" 
+            id="username"
+            [(ngModel)]="credentials.username" 
+            name="username"
+            class="form-input"
+            placeholder="Entrez votre nom d'utilisateur"
+            required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">🔒 Mot de passe</label>
+          <input 
+            type="password" 
+            id="password"
+            [(ngModel)]="credentials.password" 
+            name="password"
+            class="form-input"
+            placeholder="Entrez votre mot de passe"
+            required>
+        </div>
+        
+        <button type="submit" class="login-btn">
+          Se connecter
+        </button>
+        
+        <div *ngIf="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+      </form>
+      
+      <div class="login-info">
+        <p><strong>Identifiants par défaut :</strong></p>
+        <p>Utilisateur: admin</p>
+        <p>Mot de passe: admin123</p>
+      </div>
+    </div>
+  </div>
